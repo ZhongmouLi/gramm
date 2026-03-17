@@ -1,14 +1,32 @@
 classdef test_examples_dev < matlab.unittest.TestCase
-    % Test class that runs examples_dev.m for code coverage
-
     methods(Test)
-        function testExamples(testCase)
-            % Run the examples script
-            % This will execute all the gramm examples and generate coverage
-            run('examples_dev.m');
+        function runAllExamples(testCase)
 
-            % If we get here without error, the test passes
-            testCase.verifyTrue(true, 'examples_dev.m completed successfully');
+            examplesDir = fullfile('gramm', 'examples');
+            files = dir(fullfile(examplesDir, '*.m'));
+
+            failures = {}; % collect error messages
+
+            for k = 1:numel(files)
+                exampleFile = fullfile(files(k).folder, files(k).name);
+                [~, name] = fileparts(exampleFile);
+
+                try
+                    run(exampleFile);
+                catch msg
+                    failures{end+1} = sprintf('%s failed:\n%s', ...
+                        name, getReport(msg, 'basic'));
+                end
+                
+            end
+
+            % After running all, fail if any example had errors
+            if ~isempty(failures)
+                testCase.verifyFail(strjoin(failures, newline));
+            else
+                testCase.verifyTrue(true); % all passed
+            end
+
         end
     end
 end
